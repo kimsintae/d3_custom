@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+.chart {
+	background: conic-gradient( 
+    #26BDE2 0% 20%, #FD9D26 20% 40%, 
+    #FE3A21 40% 60%, #DD1367 60% 80%, 
+    #56C02B 80% 100%);
+}
+</style>
+<body>
+    <svg width="1800" height="600"></svg>
+    <div class="chart_sub"></div>
+</body>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+drawPieChart("2011");
+function drawPieChart(year){
+    let dataSet = new Array();
+    d3.csv("example.csv").then(function (dataCSV) {
+        let data = d3.rollup(dataCSV, d => d3.sum(d,v => v.value), c => c.year, b => 
+                                        b.industry_code_ANZSIC).get(year);
+        data.forEach(function(value,code){
+            if(code != 'all'){
+                dataSet.push({
+                    code:code,
+                    value:value
+                })
+            }
+            
+        });
+        const svgDimensions = {
+            width: 500,
+            height: 500,
+        };
+        const radius = Math.min(svgDimensions.width, svgDimensions.height) / 2;
+        
+        const colorData = d3.scaleOrdinal([
+        '#26BDE2', '#0D97D9', '#05689D', 
+        '#FD9D26', '#DDA83A', '#BF8B2E', '#916517', 
+        '#FE3A21', '#FD6925',
+        '#DD1367', '#B41055', '#9C0142',
+        '#56C02B', '#4C9F38', '#3F7E44'
+        ]);
+
+        //pie 생성
+        const pie = d3.pie().value(d=> d.value).sort(null);
+        
+        //호 생성
+        const arc = d3.arc().innerRadius(100).outerRadius(Math.min(svgDimensions.width, svgDimensions.height)/2)
+        const arcLabel = (() => {
+        const radius = Math.min(svgDimensions.width, svgDimensions.height) / 2 * 0.8;
+        return d3.arc().innerRadius(radius).outerRadius(radius);
+        })();
+        const arcs = pie(dataSet);
+
+        //요소 추가
+        const svg = d3.select('.chart_sub')
+        .append('svg')
+        .attr('width', svgDimensions.width)
+        .attr('height', svgDimensions.height);
+
+        const g = svg.append('g')
+        .attr('transform', `translate(${svgDimensions.width / 2}, ${svgDimensions.height / 2})`);
+
+        g.selectAll('path')
+        .data(arcs)
+        .enter().append('path')
+        .attr('fill', (d, i) => colorData(i) )
+        .attr('stroke', 'white')
+        .attr('d', arc)
+        .append('title')
+        .attr('class','arc')
+        .text(d => `${d.data.code}: ${d.data.value}`);
+
+        });
+}
+
+
+</script>
